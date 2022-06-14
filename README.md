@@ -6,7 +6,7 @@ Gestion de la vue avec des "ejs"
 ```bash
 npm init
 npm install express
-npm install
-npm install
+npm install pbkdf2-password
+npm install ejs
 
 ```

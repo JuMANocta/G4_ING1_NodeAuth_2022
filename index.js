@@ -1,6 +1,6 @@
 // les imports
-const { response } = require('express')
 const express = require('express')
+const session = require('express-session')
 
 // instantiation de express
 let app = express()
@@ -11,7 +11,7 @@ app.set('views', './views')
 
 // middleware sessions
 app.use(express.urlencoded({ extended: false }))
-app.use(express.session({
+app.use(session({
     resave: false, // ne pas sauvegarder si rien n'a changé
     saveUninitialized: false, // ne pas créer de session si quelque chose est enregistré
     secret: 'matrixé' // secret pour le cryptage
@@ -23,21 +23,22 @@ app.use((req, res, next) => {
     let msg = req.session.success
     delete req.session.error
     delete req.session.success
-    req.locals.message = ''
-    if (err) req.locals.message = "<p class='msg error'>" + err + "</p>"
-    if (msg) req.locals.message = "<p class='msg success'>" + msg + "</p>"
+    res.locals.message = ''
+    if (err) res.locals.message = "<p class='msg error'>" + err + "</p>"
+    if (msg) res.locals.message = "<p class='msg success'>" + msg + "</p>"
     next()
 })
 
 // mock d'un utilisateur
 let users = {
     user1 : {
-        name: "John"
+        name: "user1"
     }
 }
 
 // quand on crée un utilisateur on génère un salt et un hash
-const hash = require('pbkdf2-password')
+const hasher = require('pbkdf2-password')
+let hash = hasher()
 hash({password: "user1"}, (err, pass, salt, hash) => {
     if(err) throw err
     users.user1.salt = salt
@@ -45,16 +46,13 @@ hash({password: "user1"}, (err, pass, salt, hash) => {
 })
 
 // gérer l'authentification de notre mock utilisateur
-function authenticate(name, password, fn) {
+function authenticate(name, pass, callback) {
     let login = users[name]
-    if(!login) return fn(new Error('cet utilisateur n\'existe pas'))
-    hash({password: password, salt: login.salt}, (err, pass, salt, hash) => {
-        if(err) return fn(err)
-        if(hash === login.hash){
-            return fn(null, login.name)
-        } else{
-            return fn(new Error('mot de passe incorrect'))
-        }
+    if(!login) return callback(new Error('cet utilisateur n\'existe pas'))
+    hash({password: pass, salt: login.salt}, (err, pass, salt, hash) => {
+        if(err) return callback(err)
+        if(hash === login.hash) return callback(null, login)
+        return callback(new Error('mot de passe incorrect'))
     })
 }
 
@@ -80,3 +78,30 @@ app.get('/restricted', restriction, (req, res) => {
 app.get("/login", (req, res) => {
     res.render('login')
 })
+
+app.post('/login', (req, res, next) => {
+    authenticate(req.body.username, req.body.password, (err, user) => {
+        if(err) return next(err)
+        if(user){
+            // générer la session
+            // regénérate un token pour la session
+            req.session.regenerate(() => {
+                // stocker le nom de l'utilisateur dans la session
+                req.session.user = user.name
+                req.session.success = 'Vous êtes connecté'
+                res.redirect('/restricted')
+            })
+        }else{
+            req.session.error = 'Identifiant ou mot de passe incorrect'
+            res.redirect('/login')
+        }
+    })
+})
+
+app.get("/logout", (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/')
+    })
+})
+
+app.listen(8080)

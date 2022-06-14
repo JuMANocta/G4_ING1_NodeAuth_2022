@@ -1,0 +1,18 @@
+<%- include('head', {titre: 'Authentification Exemple'}) -%>
+<h1>Authentification</h1>
+<%- message -%>
+<p>Tentez de vous connecter <a href="/restricted">RESTRICTED</a>, puis authentifiez vous.</p>
+<form method="POST" action="/login">
+    <p>
+        <label for="username">Username :</label>
+        <input type="text" name="username" id="username">
+    </p>
+    <p>
+        <label for="password">Password :</label>
+        <input type="password" name="password" id="password">
+    </p>
+    <p>
+        <input type="submit" value="Login">
+    </p>
+</form>
+<%- include('foot') -%>
