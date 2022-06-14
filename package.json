@@ -1,0 +1,15 @@
+{
+  "name": "nodeauth",
+  "version": "1.0.0",
+  "description": "exemple d'authentification",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "moa",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.1",
+    "pbkdf2-password": "^1.2.1"
+  }
+}
